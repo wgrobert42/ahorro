@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ahorro</string>
+    <string name="title_activity_main">Ahorro</string>
+    <string name="package_name">app.ahorro.frasco</string>
+    <string name="custom_url_scheme">app.ahorro.frasco</string>
+</resources>

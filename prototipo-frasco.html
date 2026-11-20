@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ahorro · prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+<style>
+:root{--bg:#F3F9F6;--ink:#123B2F;--muted:#56706A;--green:#0F6B4F;--mint:#DFF3EA;--scene:#F1F8F4;--gold:#E2A21E;--font:'Plus Jakarta Sans',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font)}
+.app{max-width:440px;margin:0 auto;min-height:100vh;padding:20px 16px 110px;position:relative}
+.screen{display:none;flex-direction:column;gap:14px}.screen.on{display:flex}
+h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.3px}
+h2{margin:0;font-size:18px;font-weight:800}
+.sub{margin:4px 0 0;font-size:14px;color:var(--muted);line-height:1.45}
+.card{position:relative;border-radius:26px;overflow:hidden;background:var(--scene);box-shadow:0 10px 26px rgba(18,59,47,.10)}
+.panel{background:#fff;border-radius:22px;padding:16px;box-shadow:0 6px 18px rgba(18,59,47,.07)}
+#stage{width:100%;aspect-ratio:5/6;touch-action:none}
+#stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:14px;right:14px;top:14px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.92);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.g{background:var(--green);color:#fff}
+button{font-family:inherit;border:0;cursor:pointer;min-height:52px;padding:0 18px;border-radius:18px;font-size:16px;font-weight:800;background:var(--mint);color:var(--green)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+button.primary{background:var(--green);color:#fff;width:100%}
+button:disabled{opacity:.45;cursor:default}
+button:active:not(:disabled){transform:scale(.97)}
+.big{font-size:32px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted);font-size:13px;line-height:1.4}
+.bar{height:12px;border-radius:99px;background:var(--mint);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#16A36F,#0F6B4F);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.rowb{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.goalrow{display:flex;flex-direction:column;gap:2px}
+.tag{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--mint);color:var(--green);font-size:12px;font-weight:800}
+.tag.gold{background:#FFF0C7;color:#8A5A00}
+input[type=text],input[type=number]{width:100%;height:54px;border-radius:16px;border:2px solid #CFE5DA;background:#fff;padding:0 14px;font:inherit;font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{min-height:46px;font-size:14px;flex:1}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;pointer-events:none}
+.tabs nav{pointer-events:auto;width:100%;max-width:440px;display:flex;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 22px rgba(18,59,47,.10);padding:8px 8px calc(10px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;background:none;color:var(--muted);min-height:56px;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:16px}
+.tabs button[aria-selected=true]{color:var(--green);background:var(--mint)}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sheetwrap{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(18,59,47,.45);z-index:10}
+.sheetwrap.on{display:flex}
+.sheet{width:100%;max-width:440px;background:#fff;border-radius:28px 28px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;animation:up .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.banner{display:none;background:#FFF0C7;border-radius:18px;padding:14px;gap:10px;flex-direction:column}
+.banner.on{display:flex}
+#msg{color:#B3261E;font-weight:600;font-size:13px;margin:0}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.bar i{transition:none}}
+</style>
+<script type="importmap">
+{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+ "cannon-es":"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+}}
+</script>
+</head>
+<body>
+<main class="app">
+
+<section class="screen on" id="s-inicio" aria-label="Inicio">
+  <header>
+    <h1>Hola, vamos por tu billete</h1>
+    <p class="sub">Guardas en sum, compras dólares cada 100 y la meta avanza.</p>
+  </header>
+  <div class="panel">
+    <div class="muted">Ahorrado en dólares</div>
+    <div class="big" id="totalUsd">$0</div>
+    <div class="rowb"><b id="gName">Billete a casa</b><span class="muted" id="gNums"></span></div>
+    <div class="bar" role="progressbar" id="gBar" aria-label="Progreso de la meta" aria-valuemin="0" aria-valuemax="100"><i id="gFill" style="width:0"></i></div>
+    <div class="muted" id="gLeft"></div>
+  </div>
+  <section class="card" aria-label="Frasco de cristal con monedas">
+    <div id="stage"></div>
+    <div class="hud">
+      <span class="pill"><span id="count">0</span> / 100 monedas</span>
+      <span class="pill g" id="pct">0 %</span>
+    </div>
+  </section>
+  <div class="banner" id="full">
+    <b>¡Bloque de $100 completo!</b>
+    <span class="muted">Ve al banco, compra los dólares y confírmalo aquí.</span>
+    <button class="primary" id="buy" type="button">Ya compré mis $100</button>
+  </div>
+  <button class="primary" id="add" type="button">Añadir ahorro</button>
+  <p id="msg" role="alert"></p>
+</section>
+
+<section class="screen" id="s-metas" aria-label="Metas">
+  <header><h1>Tus metas</h1><p class="sub">Cada bloque de $100 llena primero la de arriba.</p></header>
+  <div id="goals" class="screen on" style="gap:12px"></div>
+  <p class="muted">Más metas llegarán a esta lista, en el orden que elijas.</p>
+</section>
+
+<section class="screen" id="s-futuro" aria-label="Yo del futuro">
+  <header><h1>Yo del futuro</h1><p class="sub">Cuánto ahorras por semana decide cuándo llegas.</p></header>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+    <label for="week" class="muted">Ahorro por semana (sum)</label>
+    <input id="week" type="number" inputmode="numeric" value="600000" min="0" step="50000">
+    <div class="muted">Equivale a <b id="weekUsd"></b> por semana</div>
+  </div>
+  <div id="future" style="display:flex;flex-direction:column;gap:12px"></div>
+</section>
+
+</main>
+
+<div class="sheetwrap" id="sheet" role="dialog" aria-modal="true" aria-label="Añadir ahorro">
+  <div class="sheet">
+    <h2>¿Cuánto vas a guardar?</h2>
+    <label for="amt" class="muted">Cantidad en sum</label>
+    <input id="amt" type="number" inputmode="numeric" placeholder="Ej. 250000" min="0">
+    <div class="chips" id="quick">
+      <button type="button" data-v="50000">+50.000</button>
+      <button type="button" data-v="100000">+100.000</button>
+      <button type="button" data-v="250000">+250.000</button>
+    </div>
+    <div class="muted" id="amtHint">Cada 12.500 sum es una moneda en el frasco.</div>
+    <button class="primary" id="save" type="button">Guardar en el frasco</button>
+    <button id="cancel" type="button">Cancelar</button>
+  </div>
+</div>
+
+<div class="tabs"><nav role="tablist" aria-label="Secciones">
+  <button role="tab" aria-selected="true" data-t="inicio" type="button"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+  <button role="tab" aria-selected="false" data-t="metas" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>Metas</button>
+  <button role="tab" aria-selected="false" data-t="futuro" type="button"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Futuro</button>
+</nav></div>
+
+<script>
+  window.__fallback = setTimeout(function(){
+    var m = document.getElementById('msg');
+    if (m && !window.__ok) m.textContent = 'No se pudieron cargar las librerías 3D. Revisa tu conexión y vuelve a abrir la página.';
+  }, 8000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as CANNON from 'cannon-es';
+
+const CR = 0.22, CT = 0.07, FLOOR = 0.12, R_IN = 0.94, R_NECK = 0.76, CAP = 100, LID_Y = 2.04;
+const $ = (id) => document.getElementById(id);
+const stage = $('stage');
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  $('msg').textContent = 'Tu navegador no pudo iniciar gráficos 3D.';
+  throw e;
+}
+const PR_MAX = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3);
+let pr = PR_MAX;
+renderer.setPixelRatio(pr);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+stage.appendChild(renderer.domElement);
+
+const SCENE_BG = 0xf1f8f4;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(SCENE_BG);
+
+const camera = new THREE.PerspectiveCamera(28, 3 / 4, 0.1, 60);
+camera.position.set(0, 3.1, 7.4);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.05, 0);
+controls.enablePan = false;
+controls.enableZoom = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minPolarAngle = 1.05;
+controls.maxPolarAngle = 1.5;
+controls.minAzimuthAngle = -1.0;
+controls.maxAzimuthAngle = 1.0;
+controls.update();
+
+// Luz plana de ilustración: mucha luz ambiente y una direccional con sombreado en 3 escalones.
+scene.add(new THREE.AmbientLight(0xffffff, 1.7));
+const key = new THREE.DirectionalLight(0xffffff, 0.9);
+key.position.set(-2.5, 5, 4);
+scene.add(key);
+
+const toonSteps = new THREE.DataTexture(new Uint8Array([170, 215, 255]), 3, 1, THREE.RedFormat);
+toonSteps.minFilter = toonSteps.magFilter = THREE.NearestFilter;
+toonSteps.needsUpdate = true;
+const toon = (opts) => new THREE.MeshToonMaterial(Object.assign({ gradientMap: toonSteps }, opts));
+
+/* ---------- Monedas: cara plana con aro, brillo y canto con degradado ---------- */
+function makeCoinTextures() {
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  const disc = (r, col) => { g.fillStyle = col; g.beginPath(); g.arc(256, 256, r, 0, Math.PI * 2); g.fill(); };
+  disc(256, '#F29A12');
+  disc(228, '#FFBE1F');
+  g.strokeStyle = '#F4AE22'; g.lineWidth = 12; g.beginPath(); g.arc(256, 256, 192, 0, Math.PI * 2); g.stroke();
+  disc(178, '#FFCB3A');
+  g.lineCap = 'round';
+  g.strokeStyle = 'rgba(255,243,176,.95)'; g.lineWidth = 24;
+  g.beginPath(); g.arc(256, 256, 146, Math.PI * 1.07, Math.PI * 1.46); g.stroke();
+  g.strokeStyle = 'rgba(226,138,18,.55)'; g.lineWidth = 20;
+  g.beginPath(); g.arc(256, 256, 146, Math.PI * 0.06, Math.PI * 0.4); g.stroke();
+  const face = new THREE.CanvasTexture(c);
+  face.colorSpace = THREE.SRGBColorSpace;
+  face.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  const e = document.createElement('canvas'); e.width = 8; e.height = 64;
+  const x = e.getContext('2d');
+  const gr = x.createLinearGradient(0, 0, 0, 64);
+  gr.addColorStop(0, '#FFDB63'); gr.addColorStop(0.35, '#F8B52B'); gr.addColorStop(0.72, '#EC9A1B'); gr.addColorStop(1, '#D4820F');
+  x.fillStyle = gr; x.fillRect(0, 0, 8, 64);
+  const edge = new THREE.CanvasTexture(e);
+  edge.colorSpace = THREE.SRGBColorSpace;
+  return { face, edge };
+}
+const tex = makeCoinTextures();
+const coinMats = [toon({ map: tex.edge }), toon({ map: tex.face }), toon({ map: tex.face })];
+const coinGeo = new THREE.CylinderGeometry(CR, CR, CT, 96, 1);
+
+/* ---------- Frasco: vidrio azulado plano con bordes más intensos ---------- */
+const P = (r, y) => new THREE.Vector2(r, y);
+const profile = [
+  P(0, 0), P(0.80, 0), P(0.90, 0.012), P(0.97, 0.05), P(1.0, 0.14), P(1.0, 1.46), P(0.985, 1.56), P(0.93, 1.66), P(0.86, 1.73), P(0.82, 1.78),
+  P(0.82, 1.90), P(0.84, 1.93), P(0.85, 2.0), P(0.84, 2.03), P(0.80, 2.04), P(0.77, 2.03), P(0.76, 2.0),
+  P(0.76, 1.90), P(0.76, 1.78), P(0.80, 1.72), P(0.87, 1.64), P(0.91, 1.55), P(0.94, 1.46), P(0.94, 0.20), P(0.93, 0.15), P(0.88, 0.13), P(0.80, 0.125), P(0, 0.12)
+];
+const glassMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); float b1 = smoothstep(0.34, 0.37, f); float b2 = smoothstep(0.70, 0.73, f); vec3 base = vec3(0.80, 0.92, 0.98); vec3 mid = vec3(0.58, 0.82, 0.95); vec3 edge = vec3(0.36, 0.67, 0.90); vec3 col = mix(mix(base, mid, b1), edge, b2); float a = 0.07 + 0.15 * b1 + 0.30 * b2; gl_FragColor = vec4(col, a); }'
+});
+const jar = new THREE.Group();
+const shell = new THREE.Mesh(new THREE.LatheGeometry(profile, 192), glassMat);
+shell.renderOrder = 1;
+jar.add(shell);
+
+const flat = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+const hl = flat(0xffffff, 0.8);
+const strip = (a0, a1, pts) => {
+  const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p[0], p[1])), 10, a0, a1 - a0), hl);
+  m.renderOrder = 3; jar.add(m);
+};
+strip(-1.04, -0.88, [[1.006, 0.34], [1.006, 1.42], [0.99, 1.56], [0.936, 1.66]]);
+strip(-0.80, -0.74, [[1.006, 0.55], [1.006, 1.28]]);
+strip(0.84, 0.93, [[1.006, 0.45], [1.006, 1.22]]);
+const baseGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.975, 0.93, 0.13, 128, 1, true), flat(0x6db8e4, 0.55));
+baseGlass.position.y = 0.065; baseGlass.renderOrder = 2; jar.add(baseGlass);
+const floorGlass = new THREE.Mesh(new THREE.CircleGeometry(0.93, 96), flat(0x8ccbee, 0.38));
+floorGlass.rotation.x = -Math.PI / 2; floorGlass.position.y = FLOOR; floorGlass.renderOrder = 0; jar.add(floorGlass);
+[[1.84, 0.832, 0.55], [1.92, 0.842, 0.55], [2.01, 0.815, 0.95]].forEach((t) => {
+  const r = new THREE.Mesh(new THREE.TorusGeometry(t[1], 0.02, 12, 160), flat(0xeaf6fd, t[2]));
+  r.rotation.x = Math.PI / 2; r.position.y = t[0]; r.renderOrder = 3; jar.add(r);
+});
+
+/* Etiqueta curva pegada al vidrio: crema, borde dorado y esquinas con muesca */
+const LW = 1536, LH = 528;
+const labelCanvas = document.createElement('canvas'); labelCanvas.width = LW; labelCanvas.height = LH;
+const labelTex = new THREE.CanvasTexture(labelCanvas);
+labelTex.colorSpace = THREE.SRGBColorSpace;
+labelTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+function notched(g, x, y, w, h, n) {
+  g.beginPath();
+  g.moveTo(x + n, y); g.lineTo(x + w - n, y);
+  g.arc(x + w, y, n, Math.PI, Math.PI / 2, true);
+  g.lineTo(x + w, y + h - n);
+  g.arc(x + w, y + h, n, -Math.PI / 2, -Math.PI, true);
+  g.lineTo(x + n, y + h);
+  g.arc(x, y + h, n, 0, -Math.PI / 2, true);
+  g.lineTo(x, y + n);
+  g.arc(x, y, n, Math.PI / 2, 0, true);
+  g.closePath();
+}
+function drawLabel(text) {
+  const g = labelCanvas.getContext('2d');
+  g.clearRect(0, 0, LW, LH);
+  const m = 28;
+  notched(g, m, m, LW - 2 * m, LH - 2 * m, 56);
+  const fill = g.createLinearGradient(0, 0, 0, LH);
+  fill.addColorStop(0, '#FFF8E8'); fill.addColorStop(1, '#F6E8C8');
+  g.fillStyle = fill; g.fill();
+  g.lineJoin = 'round'; g.strokeStyle = '#D9A04E'; g.lineWidth = 12; g.stroke();
+  notched(g, m + 26, m + 26, LW - 2 * (m + 26), LH - 2 * (m + 26), 34);
+  g.strokeStyle = '#E8C384'; g.lineWidth = 4; g.stroke();
+  const name = (text || '').trim() || 'Mi meta';
+  const fam = '"Plus Jakarta Sans", system-ui, sans-serif';
+  let size = 190;
+  g.font = '800 ' + size + 'px ' + fam;
+  while (g.measureText(name).width > LW - 330 && size > 70) { size -= 6; g.font = '800 ' + size + 'px ' + fam; }
+  g.fillStyle = '#6B3F0E'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(name, LW / 2, LH / 2 - 34);
+  g.font = '600 74px ' + fam; g.fillStyle = '#A8742F';
+  g.fillText('Bloque de $100', LW / 2, LH / 2 + 118);
+  labelTex.needsUpdate = true;
+}
+drawLabel('Billete a casa');
+const labelGeo = new THREE.LatheGeometry([new THREE.Vector2(1.014, 0.56), new THREE.Vector2(1.014, 1.24)], 48, -0.97, 1.94);
+const labelMesh = new THREE.Mesh(labelGeo, new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, alphaTest: 0.02, side: THREE.FrontSide }));
+labelMesh.renderOrder = 4;
+jar.add(labelMesh);
+scene.add(jar);
+
+// Sombra plana bajo el frasco
+const sh = document.createElement('canvas'); sh.width = sh.height = 256;
+const sg = sh.getContext('2d'); const sr = sg.createRadialGradient(128, 128, 30, 128, 128, 128);
+sr.addColorStop(0, 'rgba(70,120,110,.34)'); sr.addColorStop(0.6, 'rgba(70,120,110,.16)'); sr.addColorStop(1, 'rgba(70,120,110,0)');
+sg.fillStyle = sr; sg.fillRect(0, 0, 256, 256);
+const blob = new THREE.Mesh(new THREE.PlaneGeometry(3.7, 3.7), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
+blob.rotation.x = -Math.PI / 2; blob.position.y = 0.004; scene.add(blob);
+
+/* ---------- Tapa dorada ---------- */
+const lid = new THREE.Group();
+const addLid = (geo, color, y) => { const m = new THREE.Mesh(geo, toon({ color })); m.position.y = y; lid.add(m); return m; };
+addLid(new THREE.CylinderGeometry(0.90, 0.90, 0.12, 128), 0xe39a1c, 0.06);
+addLid(new THREE.CylinderGeometry(0.94, 0.94, 0.02, 128), 0xc9780f, 0.125);
+addLid(new THREE.CylinderGeometry(0.95, 0.95, 0.11, 128), 0xf6b930, 0.19);
+addLid(new THREE.CylinderGeometry(0.95, 0.95, 0.02, 128), 0xffd552, 0.255);
+addLid(new THREE.CylinderGeometry(0.84, 0.84, 0.01, 128), 0xfbc53a, 0.266);
+lid.position.set(0, LID_Y, 0);
+scene.add(lid);
+const lidClosed = { p: new THREE.Vector3(0, LID_Y, 0), q: new THREE.Quaternion() };
+const lidOpen = { p: new THREE.Vector3(1.5, 2.75, -2.6), q: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.55, 0.2, -0.6)) };
+
+/* ---------- Física (igual que la prueba anterior) ---------- */
+const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -18, 0) });
+world.allowSleep = true;
+world.solver.iterations = 12;
+world.broadphase = new CANNON.NaiveBroadphase();
+const coinPM = new CANNON.Material('coin'), glassPM = new CANNON.Material('glass');
+world.addContactMaterial(new CANNON.ContactMaterial(coinPM, coinPM, { friction: 0.22, restitution: 0.3 }));
+world.addContactMaterial(new CANNON.ContactMaterial(coinPM, glassPM, { friction: 0.2, restitution: 0.22 }));
+
+const floorBody = new CANNON.Body({ mass: 0, material: glassPM });
+floorBody.addShape(new CANNON.Plane());
+floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+floorBody.position.set(0, FLOOR, 0);
+world.addBody(floorBody);
+
+const NSEG = 24, HT = 0.4;
+function wallRing(radius, y0, y1) {
+  const hy = (y1 - y0) / 2;
+  for (let i = 0; i < NSEG; i++) {
+    const a = (i / NSEG) * Math.PI * 2;
+    const seg = radius * Math.tan(Math.PI / NSEG) + 0.03;
+    const b = new CANNON.Body({ mass: 0, material: glassPM });
+    b.addShape(new CANNON.Box(new CANNON.Vec3(HT, hy, seg)));
+    b.position.set((radius + HT) * Math.cos(a), (y0 + y1) / 2, (radius + HT) * Math.sin(a));
+    b.quaternion.setFromEuler(0, -a, 0);
+    world.addBody(b);
+  }
+}
+wallRing(R_IN, 0, 1.5);
+wallRing(R_NECK, 1.5, 2.4);
+for (let i = 0; i < NSEG; i++) {
+  const a = (i / NSEG) * Math.PI * 2;
+  const mid = (R_NECK + R_IN + HT) / 2, half = (R_IN + HT - R_NECK) / 2;
+  const b = new CANNON.Body({ mass: 0, material: glassPM });
+  b.addShape(new CANNON.Box(new CANNON.Vec3(half, 0.06, R_IN * Math.tan(Math.PI / NSEG) + 0.03)));
+  b.position.set(mid * Math.cos(a), 1.56, mid * Math.sin(a));
+  b.quaternion.setFromEuler(0, -a, 0);
+  world.addBody(b);
+}
+
+const proto = new CANNON.Cylinder(CR, CR, CT, 10);
+const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+proto.vertices.forEach((v) => [v.x, v.y, v.z].forEach((c, i) => { mn[i] = Math.min(mn[i], c); mx[i] = Math.max(mx[i], c); }));
+const ext = mx.map((m, i) => m - mn[i]);
+const thin = ext.indexOf(Math.min(...ext));
+let shapeQ;
+if (thin === 2) { shapeQ = new CANNON.Quaternion(); shapeQ.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2); }
+if (thin === 0) { shapeQ = new CANNON.Quaternion(); shapeQ.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), Math.PI / 2); }
+
+const rr = (a, b) => a + Math.random() * (b - a);
+const coins = [];
+const vanishing = [];
+let pending = 0, nextSpawn = 0, lastSpawn = 0, buying = false;
+
+function trySpawn() {
+  const y = 2.5 + Math.random() * 0.2;
+  let px = 0, pz = 0, ok = false;
+  for (let t = 0; t < 10 && !ok; t++) {
+    const a = Math.random() * Math.PI * 2, r = Math.random() * 0.48;
+    px = Math.cos(a) * r; pz = Math.sin(a) * r;
+    ok = !coins.some((c) => c.body.position.y > 1.9 && Math.hypot(c.body.position.x - px, c.body.position.z - pz) < 0.58 && Math.abs(c.body.position.y - y) < 0.5);
+  }
+  if (!ok) return false;
+  const body = new CANNON.Body({ mass: 1, material: coinPM });
+  body.addShape(proto, new CANNON.Vec3(), shapeQ);
+  body.position.set(px, y, pz);
+  body.quaternion.setFromEuler(rr(-0.8, 0.8), rr(0, 6.28), rr(-0.8, 0.8));
+  body.velocity.set(rr(-1, 1), -3, rr(-1, 1));
+  body.angularVelocity.set(rr(-6, 6), rr(-6, 6), rr(-6, 6));
+  body.linearDamping = 0.02; body.angularDamping = 0.35;
+  body.allowSleep = true; body.sleepSpeedLimit = 0.7; body.sleepTimeLimit = 0.25;
+  world.addBody(body);
+  const mesh = new THREE.Mesh(coinGeo, coinMats);
+  scene.add(mesh);
+  coins.push({ body, mesh });
+  return true;
+}
+
+function queue(n) {
+  if (buying) return;
+  const room = CAP - coins.length - pending;
+  pending += Math.max(0, Math.min(n, room));
+}
+function buyBlock() {
+  if (buying || !coins.length) return;
+  buying = true; pending = 0;
+  const now = performance.now();
+  [...coins].sort((a, b) => b.body.position.y - a.body.position.y).forEach((c, i) => vanishing.push({ c, t0: now + i * 16, started: false }));
+  coins.length = 0;
+  setTimeout(() => { buying = false; refresh(); }, 16 * vanishing.length + 500);
+}
+
+/* ---------- App: ahorro en sum, bloques de $100 ---------- */
+const RATE = 12500;                 // sum por dólar (dato de ejemplo)
+const GOALS = [{ name: 'Billete a casa', target: 700 }, { name: 'Multa de salida', target: 400 }];
+const S = { bank: 200, jarSum: 35 * RATE };   // dólares ya comprados y sum en el frasco
+const fmt = (n) => Math.round(n).toLocaleString('es-ES');
+const usd = (n) => '$' + fmt(n);
+const jarCoins = () => Math.min(CAP, Math.floor(S.jarSum / RATE));
+
+function allocate() {
+  let left = S.bank;
+  return GOALS.map((g) => { const saved = Math.min(g.target, left); left -= saved; return { ...g, saved }; });
+}
+function currentGoal(a) { return a.find((g) => g.saved < g.target) || a[a.length - 1]; }
+
+function refresh() {
+  const a = allocate(), cur = currentGoal(a), inJar = jarCoins();
+  countEl.textContent = String(coins.length);
+  pctEl.textContent = Math.round((coins.length / CAP) * 100) + ' %';
+  $('totalUsd').textContent = usd(S.bank + inJar);
+  $('gName').textContent = cur.name;
+  $('gNums').textContent = usd(cur.saved) + ' de ' + usd(cur.target);
+  const pc = Math.min(100, Math.round(((cur.saved + inJar) / cur.target) * 100));
+  $('gFill').style.width = pc + '%';
+  $('gBar').setAttribute('aria-valuenow', String(pc));
+  $('gLeft').textContent = 'Te faltan ' + usd(Math.max(0, cur.target - cur.saved - inJar)) + ' para esta meta.';
+  if (lblName !== cur.name) { lblName = cur.name; drawLabel(cur.name); }
+  const full = inJar >= CAP && !buying;
+  $('full').classList.toggle('on', full);
+  $('add').disabled = buying;
+  $('buy').disabled = buying || coins.length + pending < CAP;
+  renderGoals(a, cur); renderFuture(a);
+}
+let lblName = 'Billete a casa';
+const countEl = $('count'), pctEl = $('pct');
+
+function renderGoals(a, cur) {
+  $('goals').innerHTML = a.map((g, i) => {
+    const pc = Math.round((g.saved / g.target) * 100);
+    const state = g.saved >= g.target ? '<span class="tag">Completa</span>' : g === cur ? '<span class="tag gold">Llenando ahora</span>' : '<span class="tag">En espera</span>';
+    return '<div class="panel goalrow"><div class="rowb"><h2>' + (i + 1) + '. ' + g.name + '</h2>' + state + '</div>' +
+      '<div class="bar"><i style="width:' + pc + '%"></i></div>' +
+      '<div class="rowb"><b>' + usd(g.saved) + '</b><span class="muted">de ' + usd(g.target) + '</span></div></div>';
+  }).join('');
+}
+function renderFuture(a) {
+  const per = Number($('week').value) || 0;
+  $('weekUsd').textContent = usd(per / RATE);
+  let have = S.bank * RATE + S.jarSum, need = 0;
+  $('future').innerHTML = a.map((g) => {
+    need += g.target * RATE;
+    const miss = Math.max(0, need - have);
+    let txt;
+    if (miss <= 0) txt = 'Ya la tienes cubierta';
+    else if (per <= 0) txt = 'Añade un ahorro semanal para ver la fecha';
+    else { const w = Math.ceil(miss / per), d = new Date(Date.now() + w * 7 * 864e5); txt = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · en ' + w + ' semanas'; }
+    return '<div class="panel"><div class="muted">' + g.name + '</div><div class="rowb" style="margin-top:4px"><b style="font-size:17px">' + txt + '</b></div></div>';
+  }).join('');
+}
+
+function addSum(v) {
+  if (!(v > 0) || buying) return;
+  const before = jarCoins();
+  S.jarSum += v;
+  queue(jarCoins() - before);
+  refresh();
+}
+$('add').addEventListener('click', () => { $('sheet').classList.add('on'); $('amt').value = ''; $('amt').focus(); updHint(); });
+$('cancel').addEventListener('click', () => $('sheet').classList.remove('on'));
+$('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) $('sheet').classList.remove('on'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('sheet').classList.remove('on'); });
+$('quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { $('amt').value = String((Number($('amt').value) || 0) + Number(b.dataset.v)); updHint(); } });
+function updHint() { const v = Number($('amt').value) || 0; $('amtHint').textContent = v ? 'Son ' + usd(v / RATE) + ' · ' + Math.floor(v / RATE) + ' monedas nuevas' : 'Cada 12.500 sum es una moneda en el frasco.'; }
+$('amt').addEventListener('input', updHint);
+$('save').addEventListener('click', () => { const v = Number($('amt').value) || 0; if (v <= 0) { $('amt').focus(); return; } $('sheet').classList.remove('on'); addSum(v); });
+$('buy').addEventListener('click', () => {
+  if (jarCoins() < CAP) return;
+  S.bank += 100; S.jarSum -= 100 * RATE;
+  buyBlock();
+  setTimeout(() => { queue(jarCoins()); refresh(); }, 16 * 100 + 700);
+  refresh();
+});
+$('week').addEventListener('input', () => renderFuture(allocate()));
+document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('.screen').forEach((s) => { if (s.id.startsWith('s-')) s.classList.toggle('on', s.id === 's-' + b.dataset.t); });
+  scrollTo(0, 0); resize();
+}));
+if (document.fonts && document.fonts.load) {
+  document.fonts.load('800 80px "Plus Jakarta Sans"').then(() => document.fonts.load('600 40px "Plus Jakarta Sans"')).then(() => drawLabel(lblName)).catch(() => {});
+}
+function initApp() { queue(Number(qs.get('n')) || jarCoins()); refresh(); }
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  renderer.setPixelRatio(pr);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+/* ---------- Bucle ---------- */
+const qs = new URLSearchParams(location.search);
+const MAXDT = Number(qs.get('dt')) || 0.05;
+let last = performance.now(), maxSub = Number(qs.get('sub')) || 4, avg = 0;
+const ease = (p) => p * p * (3 - 2 * p);
+let frameMs = 16, frames = 0;
+function tick(now) {
+  const real = Math.min(MAXDT, (now - last) / 1000); last = now;
+  const ts = 1;
+
+  if (pending > 0 && now >= nextSpawn && !buying) {
+    if (trySpawn()) { pending--; nextSpawn = now + 70 / Math.max(ts, 0.25); lastSpawn = now; refresh(); }
+  }
+  const lidTarget = (pending > 0 || now - lastSpawn < 900) ? lidOpen : lidClosed;
+  const k = 1 - Math.exp(-6 * real);
+  lid.position.lerp(lidTarget.p, k);
+  lid.quaternion.slerp(lidTarget.q, k);
+
+  const t0 = performance.now();
+  world.step(1 / 120, real * ts, maxSub);
+  const cost = performance.now() - t0;
+  avg = avg * 0.95 + cost * 0.05;
+  if (avg > 12 && maxSub > 2 && !qs.get('sub')) maxSub = 2;
+
+  for (const c of coins) {
+    c.mesh.position.copy(c.body.position);
+    c.mesh.quaternion.copy(c.body.quaternion);
+  }
+  for (let i = vanishing.length - 1; i >= 0; i--) {
+    const v = vanishing[i];
+    if (now < v.t0) { v.c.mesh.position.copy(v.c.body.position); v.c.mesh.quaternion.copy(v.c.body.quaternion); continue; }
+    if (!v.started) { world.removeBody(v.c.body); v.started = true; }
+    const p = Math.min(1, (now - v.t0) / 280);
+    v.c.mesh.scale.setScalar(Math.max(0.001, 1 - ease(p)));
+    if (p >= 1) { scene.remove(v.c.mesh); vanishing.splice(i, 1); }
+  }
+
+  frameMs = frameMs * 0.94 + real * 1000 * 0.06;
+  if (++frames % 90 === 0 && frameMs > 36 && pr > 1.25) { pr = Math.max(1.25, pr * 0.8); resize(); }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+window.__ok = true;
+clearTimeout(window.__fallback);
+initApp();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6B4F">
+<title>Ahorro</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+<main class="app">
+  <section class="screen on" id="s-inicio" aria-label="Inicio">
+    <header>
+      <h1>Hola, vamos por tu billete</h1>
+      <p class="sub">Guardas en sum, compras dólares cada 100 y la meta avanza.</p>
+    </header>
+    <div class="panel" id="homeInfo">
+      <div class="muted">Ahorrado en dólares</div>
+      <div class="big" id="totalUsd">$0</div>
+      <div id="goalBlock"></div>
+    </div>
+    <section class="card" aria-label="Frasco de cristal con monedas">
+      <div id="stage"></div>
+      <div class="hud">
+        <span class="pill"><span id="count">0</span> / 100 monedas</span>
+        <span class="pill g" id="pct">0 %</span>
+      </div>
+    </section>
+    <div class="banner" id="full">
+      <b>¡Bloque de $100 completo!</b>
+      <span class="muted">Ve al banco, compra los dólares y confírmalo aquí.</span>
+      <button class="primary" id="buy" type="button">Ya compré mis $100</button>
+    </div>
+    <button class="primary" id="add" type="button">Añadir ahorro</button>
+    <p id="msg" role="alert"></p>
+  </section>
+  <section class="screen" id="s-metas" aria-label="Metas"></section>
+  <section class="screen" id="s-futuro" aria-label="Yo del futuro"></section>
+  <section class="screen" id="s-retos" aria-label="Retos y rachas"></section>
+  <section class="screen" id="s-ajustes" aria-label="Ajustes"></section>
+</main>
+<div class="sheetwrap" id="sheet" role="dialog" aria-modal="true"><div class="sheet" id="sheetBody"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<div class="tabs"><nav role="tablist" aria-label="Secciones" id="tabs"></nav></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

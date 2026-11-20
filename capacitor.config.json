@@ -1,0 +1,7 @@
+{
+  "appId": "app.ahorro.frasco",
+  "appName": "Ahorro",
+  "webDir": "dist",
+  "backgroundColor": "#F3F9F6",
+  "android": { "allowMixedContent": false }
+}
