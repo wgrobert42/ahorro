@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const LW = 1536, LH = 528;
-const FAM = '"Plus Jakarta Sans", system-ui, sans-serif';
+const FAM = '"Inter Variable", -apple-system, system-ui, sans-serif';
 
 function notched(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, n: number) {
   g.beginPath();
@@ -38,8 +38,8 @@ export function createLabel(maxAniso: number) {
     g.strokeStyle = '#E8C384'; g.lineWidth = 4; g.stroke();
     const name = (text || '').trim() || 'Mi meta';
     let size = 190;
-    g.font = '800 ' + size + 'px ' + FAM;
-    while (g.measureText(name).width > LW - 330 && size > 70) { size -= 6; g.font = '800 ' + size + 'px ' + FAM; }
+    g.font = '700 ' + size + 'px ' + FAM;
+    while (g.measureText(name).width > LW - 330 && size > 70) { size -= 6; g.font = '700 ' + size + 'px ' + FAM; }
     g.fillStyle = '#6B3F0E'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(name, LW / 2, LH / 2 - 34);
     g.font = '600 74px ' + FAM; g.fillStyle = '#A8742F';
@@ -53,8 +53,8 @@ export function createLabel(maxAniso: number) {
   mesh.renderOrder = 4;
 
   if (document.fonts?.load) {
-    document.fonts.load('800 80px "Plus Jakarta Sans"')
-      .then(() => document.fonts.load('600 40px "Plus Jakarta Sans"'))
+    document.fonts.load('700 80px "Inter Variable"')
+      .then(() => document.fonts.load('600 40px "Inter Variable"'))
       .then(() => draw(current)).catch(() => {});
   }
   return { mesh, set: (t: string) => { if (t !== current) draw(t); } };

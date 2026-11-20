@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as CANNON from 'cannon-es';
 import { createLabel } from './label';
 import { createWorld, CR, CT, FLOOR } from './physics';
@@ -33,12 +32,7 @@ export function createJar(stage: HTMLElement, onChange: (n: number) => void): Ja
   scene.background = new THREE.Color(0xf1f8f4);
   const camera = new THREE.PerspectiveCamera(28, 3 / 4, 0.1, 60);
   camera.position.set(0, 3.1, 7.4);
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 1.05, 0);
-  controls.enablePan = false; controls.enableZoom = false; controls.enableDamping = true; controls.dampingFactor = 0.08;
-  controls.minPolarAngle = 1.05; controls.maxPolarAngle = 1.5;
-  controls.minAzimuthAngle = -1.0; controls.maxAzimuthAngle = 1.0;
-  controls.update();
+  camera.lookAt(0, 1.05, 0); // cámara fija: el frasco no gira, así no interfiere con el scroll
 
   scene.add(new THREE.AmbientLight(0xffffff, 1.7));
   const key = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -242,7 +236,6 @@ export function createJar(stage: HTMLElement, onChange: (n: number) => void): Ja
 
     frameMs = frameMs * 0.94 + real * 1000 * 0.06;
     if (++frames % 90 === 0 && frameMs > 36 && pr > 1.25) { pr = Math.max(1.25, pr * 0.8); resize(); }
-    controls.update();
     renderer.render(scene, camera);
   }
   requestAnimationFrame(tick);

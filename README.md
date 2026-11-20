@@ -6,7 +6,8 @@ Funciona sin conexión (todo está empaquetado, incluida la fuente) y guarda los
 ## Funciones
 Frasco con metas (la etiqueta sigue a la meta activa) · metas creables, editables, reordenables y borrables ·
 horas de trabajo por meta · "Yo del futuro" (fecha según ahorro semanal) · retos semanales, rachas e insignias ·
-ajustes (tipo de cambio, sueldo por hora, moneda de entrada sum/USD, alto contraste).
+historial de ahorros editable (todo se refleja en el frasco) · moneda de ahorro por meta (sum o USD, con el equivalente en pequeño) ·
+ajustes (tipo de cambio, sueldo por hora, objetivo semanal, alto contraste).
 Los importes iniciales (tipo de cambio 12.500, metas $700 y $400) son ejemplos editables.
 
 ## Ejecutar y probar (con ordenador)
